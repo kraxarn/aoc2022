@@ -19,6 +19,14 @@ struct Position {
 	y: i32,
 }
 
+impl Clone for Map {
+	fn clone(&self) -> Self {
+		Self {
+			elves: self.elves.clone(),
+		}
+	}
+}
+
 impl Map {
 	fn parse(lines: impl Iterator<Item=Result<String, Error>>) -> Self {
 		let mut elves = HashSet::new();
@@ -131,7 +139,7 @@ impl Position {
 	}
 }
 
-fn simulate(map: &mut Map, rounds: usize) {
+fn simulate(map: &mut Map, rounds: usize) -> usize {
 	for n in 0..rounds {
 		let mut elves: Vec<(Position, Option<Position>)> = map.elves.iter()
 			.map(|pos| (pos.clone(), pos.proposed(map, n)))
@@ -151,6 +159,10 @@ fn simulate(map: &mut Map, rounds: usize) {
 			}
 		}
 
+		if elves.iter().all(|(_, new_pos)| new_pos.is_none()) {
+			return n + 1;
+		}
+
 		for (old_pos, new_pos) in elves {
 			if let Some(new_pos) = new_pos {
 				map.elves.remove(&old_pos);
@@ -158,14 +170,20 @@ fn simulate(map: &mut Map, rounds: usize) {
 			}
 		}
 	}
+	rounds
 }
 
 fn main() {
 	let file = File::open("./day23/input").unwrap();
 	let lines = BufReader::new(file).lines();
 
+	let mut map1 = Map::parse(lines);
+	let mut map2 = map1.clone();
+
 	// Part 1
-	let mut map = Map::parse(lines);
-	simulate(&mut map, 10);
-	println!("Empty ground tiles: {}", map.empty_tile_count());
+	simulate(&mut map1, 10);
+	println!("Empty ground tiles: {}", map1.empty_tile_count());
+
+	// Part 2
+	println!("Rounds: {}", simulate(&mut map2, usize::MAX));
 }
