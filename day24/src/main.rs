@@ -174,9 +174,9 @@ impl Position {
 	}
 }
 
-fn walk(maps: &mut MapCollection, start: Position) -> usize {
-	let mut positions = HashSet::from([start]);
-	let mut steps = 0;
+fn walk(maps: &mut MapCollection, start: &Position, end: &Position, initial: usize) -> usize {
+	let mut positions = HashSet::from([start.clone()]);
+	let mut steps = initial;
 
 	loop {
 		let mut options = HashSet::new();
@@ -192,11 +192,10 @@ fn walk(maps: &mut MapCollection, start: Position) -> usize {
 			];
 			for direction in directions {
 				let next = position.walk(direction);
-				if let Some(tiles) = map.tiles.get(&next) {
-					if tiles[0] == Tile::End {
-						return steps;
-					}
-				} else if next.y > 0 {
+				if &next == end {
+					return steps;
+				}
+				if !map.tiles.contains_key(&next) && next.y > 0 && next.y < map.height as i32 {
 					options.insert(next);
 				}
 			}
@@ -205,7 +204,7 @@ fn walk(maps: &mut MapCollection, start: Position) -> usize {
 		positions = if options.len() > 0 {
 			options
 		} else {
-			HashSet::from([start])
+			HashSet::from([start.clone()])
 		};
 
 		steps += 1;
@@ -218,7 +217,14 @@ fn main() {
 
 	let mut maps = MapCollection::new(Map::parse(lines));
 	let start = maps.get(0).find(&Tile::Start).unwrap();
+	let end = maps.get(0).find(&Tile::End).unwrap();
 
 	// Part 1
-	println!("Steps: {}", walk(&mut maps, start));
+	let trip1 = walk(&mut maps, &start, &end, 0);
+	println!("First trip: {}", trip1);
+
+	// Part 2
+	let trip2 = walk(&mut maps, &end, &start, trip1);
+	let trip3 = walk(&mut maps, &start, &end, trip2);
+	println!("Third trip: {}", trip3);
 }
